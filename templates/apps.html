@@ -1,114 +1,97 @@
 {% extends "base.html" %}
 {% block title %}Applications - HEX PROTOCOL{% endblock %}
 {% block page_title %}Applications{% endblock %}
-{% block page_subtitle %}Manage API Applications{% endblock %}
 {% block content %}
 
-<div class="glass p-6 mb-8">
-    <h3 class="text-lg font-semibold mb-4"><i class="fas fa-plus-circle text-purple-400 mr-2"></i>Create Application</h3>
-    <form id="createAppForm" class="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div>
-            <label>Application Name</label>
-            <input type="text" name="name" required placeholder="e.g. My Java App">
+<div class="card" style="margin-bottom: 20px;">
+    <h3 style="margin-bottom: 20px;"><i class="fas fa-cube" style="color: #8b5cf6;"></i> Create New Application</h3>
+    <form id="createAppForm">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+            <div>
+                <label>Application Name</label>
+                <input type="text" name="name" placeholder="e.g. Telegram Bot" required>
+            </div>
+            <div>
+                <label>Description</label>
+                <input type="text" name="description" placeholder="Optional">
+            </div>
         </div>
-        <div>
-            <label>Description</label>
-            <input type="text" name="description" placeholder="Optional description">
-        </div>
-        <div class="flex items-end">
-            <button type="submit" class="btn-gradient w-full py-3 rounded-xl font-semibold text-white">
-                <i class="fas fa-cube mr-2"></i>Create App
-            </button>
-        </div>
+        <button type="submit" class="btn btn-primary" style="margin-top: 20px; width: 100%;">
+            <i class="fas fa-plus"></i> Create Application
+        </button>
     </form>
 </div>
 
-<div class="glass p-6">
-    <div class="flex items-center justify-between mb-4">
-        <h3 class="text-lg font-semibold"><i class="fas fa-cubes text-purple-400 mr-2"></i>All Applications</h3>
-        <button onclick="loadApps()" class="text-gray-400 hover:text-white">
-            <i class="fas fa-rotate"></i>
-        </button>
+<div id="apiKeyDisplay" style="display: none;" class="card" style="margin-bottom: 20px;">
+    <h3 style="color: #f59e0b; margin-bottom: 10px;">⚠️ SAVE YOUR API KEY NOW!</h3>
+    <div style="background: #0a0a0f; padding: 15px; border-radius: 8px; margin-bottom: 10px;">
+        <p style="font-size: 12px; color: #9ca3af; margin-bottom: 5px;">Application ID:</p>
+        <p id="newAppId" style="font-family: monospace; font-size: 18px; color: #3b82f6;"></p>
+        <p style="font-size: 12px; color: #9ca3af; margin: 10px 0 5px;">API Key:</p>
+        <p id="newApiKey" style="font-family: monospace; font-size: 16px; color: #10b981;"></p>
     </div>
-    <div class="overflow-x-auto">
-        <table class="w-full">
-            <thead>
-                <tr class="border-b border-white/10 text-left">
-                    <th class="py-3 px-4 text-xs uppercase">Name</th>
-                    <th class="py-3 px-4 text-xs uppercase">Description</th>
-                    <th class="py-3 px-4 text-xs uppercase">Status</th>
-                    <th class="py-3 px-4 text-xs uppercase">Keys</th>
-                    <th class="py-3 px-4 text-xs uppercase">Actions</th>
-                </tr>
-            </thead>
-            <tbody id="appsTableBody">
-                <tr><td colspan="5" class="text-center py-8 text-gray-500">Loading...</td></tr>
-            </tbody>
-        </table>
-    </div>
+    <button onclick="copyApiKey()" class="btn btn-success">Copy API Key</button>
 </div>
+
+<div class="card">
+    <h3 style="margin-bottom: 15px;">All Applications</h3>
+    <table>
+        <thead>
+            <tr><th>ID</th><th>Name</th><th>Status</th><th>Keys</th><th>Actions</th></tr>
+        </thead>
+        <tbody id="appsBody">
+            <tr><td colspan="5" style="text-align: center;">Loading...</td></tr>
+        </tbody>
+    </table>
+</div>
+
 {% endblock %}
 {% block scripts %}
 <script>
 function loadApps() {
-    fetch('/admin/api/apps', {
-        headers: {'Authorization': `Bearer ${localStorage.getItem('token')}`}
-    })
-    .then(res => res.json())
+    fetch('/admin/api/apps', { headers: {'Authorization': `Bearer ${localStorage.getItem('token')}`} })
+    .then(r => r.json())
     .then(apps => {
-        const tbody = document.getElementById('appsTableBody');
-        if (apps.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="5" class="text-center py-8">No applications found</td></tr>';
-            return;
-        }
-        tbody.innerHTML = apps.map(app => `
-            <tr class="border-b border-white/5 table-row">
-                <td class="py-3 px-4 font-semibold">${app.name}</td>
-                <td class="py-3 px-4 text-gray-400">${app.description || '-'}</td>
-                <td class="py-3 px-4">
-                    <span class="status-badge ${app.is_active ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}">
-                        ${app.is_active ? 'Active' : 'Inactive'}
-                    </span>
-                </td>
-                <td class="py-3 px-4">${app.license_count}</td>
-                <td class="py-3 px-4">
-                    <button onclick="toggleApp(${app.id})" class="text-blue-400 hover:text-blue-300 text-sm">
-                        <i class="fas fa-power-off mr-1"></i>${app.is_active ? 'Deactivate' : 'Activate'}
-                    </button>
-                </td>
+        document.getElementById('appsBody').innerHTML = apps.map(a => `
+            <tr>
+                <td>${a.id}</td>
+                <td>${a.name}</td>
+                <td><span class="badge" style="background: ${a.is_active ? '#10b98120' : '#ef444420'}; color: ${a.is_active ? '#10b981' : '#ef4444'};">${a.is_active ? 'Active' : 'Inactive'}</span></td>
+                <td>${a.license_count}</td>
+                <td><button onclick="toggleApp(${a.id})" style="background: none; border: none; color: #3b82f6; cursor: pointer;">${a.is_active ? 'Deactivate' : 'Activate'}</button></td>
             </tr>
         `).join('');
     });
+}
+
+document.getElementById('createAppForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const formData = new FormData(this);
+    const response = await fetch('/admin/api/apps', {
+        method: 'POST',
+        headers: {'Authorization': `Bearer ${localStorage.getItem('token')}`},
+        body: formData
+    });
+    const data = await response.json();
+    if (data.api_key) {
+        document.getElementById('newAppId').textContent = data.id;
+        document.getElementById('newApiKey').textContent = data.api_key;
+        document.getElementById('apiKeyDisplay').style.display = 'block';
+        loadApps();
+    }
+});
+
+function copyApiKey() {
+    navigator.clipboard.writeText(document.getElementById('newApiKey').textContent);
+    alert('API Key copied!');
 }
 
 function toggleApp(id) {
     fetch(`/admin/api/apps/${id}/toggle`, {
         method: 'PUT',
         headers: {'Authorization': `Bearer ${localStorage.getItem('token')}`}
-    })
-    .then(() => loadApps());
+    }).then(() => loadApps());
 }
-
-document.getElementById('createAppForm').addEventListener('submit', async function(e) {
-    e.preventDefault();
-    const formData = new FormData(this);
-    
-    try {
-        const response = await fetch('/admin/api/apps', {
-            method: 'POST',
-            headers: {'Authorization': `Bearer ${localStorage.getItem('token')}`},
-            body: formData
-        });
-        const data = await response.json();
-        if (data.api_key) {
-            alert(`Application Created!\n\nApp ID: ${data.id}\nAPI Key: ${data.api_key}\n\nSAVE THIS KEY NOW!`);
-            loadApps();
-            this.reset();
-        }
-    } catch (error) {
-        alert('Error creating application');
-    }
-});
 
 loadApps();
 </script>

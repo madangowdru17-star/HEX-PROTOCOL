@@ -1,41 +1,30 @@
 {% extends "base.html" %}
 {% block title %}Login - HEX PROTOCOL{% endblock %}
 {% block content %}
-<div class="flex items-center justify-center min-h-screen py-12">
-    <div class="w-full max-w-md">
-        <div class="glass p-8" style="background: rgba(13, 13, 21, 0.8); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 24px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);">
-            <div class="text-center mb-8">
-                <div class="w-20 h-20 mx-auto mb-4 rounded-2xl bg-gradient-to-r from-blue-600 to-purple-600 flex items-center justify-center">
-                    <i class="fas fa-shield-halved text-3xl text-white"></i>
-                </div>
-                <h1 class="text-3xl font-bold text-gradient">HEX PROTOCOL</h1>
-                <p class="text-gray-400 mt-2">Advanced License Management System</p>
-                <div class="mt-4 inline-flex items-center gap-2 bg-blue-500/10 text-blue-400 px-4 py-2 rounded-full text-xs">
-                    <span class="w-2 h-2 bg-blue-400 rounded-full animate-pulse"></span>
-                    Secure Access Required
-                </div>
+<div style="display: flex; align-items: center; justify-content: center; min-height: 100vh;">
+    <div class="card" style="width: 100%; max-width: 400px; padding: 40px;">
+        <div style="text-align: center; margin-bottom: 30px;">
+            <div style="width: 70px; height: 70px; margin: 0 auto 15px; background: linear-gradient(135deg, #3b82f6, #8b5cf6); border-radius: 20px; display: flex; align-items: center; justify-content: center;">
+                <i class="fas fa-shield-halved" style="font-size: 30px; color: white;"></i>
             </div>
-            
-            <form id="loginForm" class="space-y-5">
-                <div>
-                    <label><i class="fas fa-user mr-2"></i>Username</label>
-                    <input type="text" id="username" name="username" required placeholder="Enter username">
-                </div>
-                <div>
-                    <label><i class="fas fa-lock mr-2"></i>Password</label>
-                    <input type="password" id="password" name="password" required placeholder="Enter password">
-                </div>
-                <button type="submit" class="btn-gradient w-full py-3 rounded-xl font-semibold text-white">
-                    <i class="fas fa-right-to-bracket mr-2"></i>Sign In
-                </button>
-            </form>
-            
-            <div id="errorMsg" class="mt-4 text-red-400 text-sm text-center bg-red-500/10 rounded-lg py-2 hidden"></div>
-            
-            <div class="mt-6 text-center text-xs text-gray-500">
-                <p>Protected by HEX PROTOCOL Security</p>
-            </div>
+            <h1 style="font-size: 24px; font-weight: bold;">HEX PROTOCOL</h1>
+            <p style="color: #9ca3af; margin-top: 5px;">Admin Login</p>
         </div>
+        
+        <form id="loginForm">
+            <div style="margin-bottom: 15px;">
+                <label>Username</label>
+                <input type="text" id="username" placeholder="admin" required>
+            </div>
+            <div style="margin-bottom: 20px;">
+                <label>Password</label>
+                <input type="password" id="password" placeholder="••••••••" required>
+            </div>
+            <button type="submit" class="btn btn-primary" style="width: 100%;">
+                <i class="fas fa-lock"></i> Sign In
+            </button>
+        </form>
+        <div id="errorMsg" style="display: none; margin-top: 15px; padding: 10px; background: #ef444420; color: #ef4444; border-radius: 8px; text-align: center;"></div>
     </div>
 </div>
 {% endblock %}
@@ -43,30 +32,18 @@
 <script>
 document.getElementById('loginForm').addEventListener('submit', async function(e) {
     e.preventDefault();
-    const errorMsg = document.getElementById('errorMsg');
-    errorMsg.classList.add('hidden');
-    
     const formData = new FormData();
     formData.append('username', document.getElementById('username').value);
     formData.append('password', document.getElementById('password').value);
     
-    try {
-        const response = await fetch('/admin/api/auth/login', {
-            method: 'POST',
-            body: formData
-        });
-        
-        if (response.ok) {
-            const data = await response.json();
-            localStorage.setItem('token', data.access_token);
-            window.location.href = '/admin/dashboard';
-        } else {
-            errorMsg.textContent = 'Invalid credentials. Access denied.';
-            errorMsg.classList.remove('hidden');
-        }
-    } catch (error) {
-        errorMsg.textContent = 'Connection error. Please try again.';
-        errorMsg.classList.remove('hidden');
+    const response = await fetch('/admin/api/auth/login', { method: 'POST', body: formData });
+    if (response.ok) {
+        const data = await response.json();
+        localStorage.setItem('token', data.access_token);
+        window.location.href = '/admin/dashboard';
+    } else {
+        document.getElementById('errorMsg').style.display = 'block';
+        document.getElementById('errorMsg').textContent = 'Invalid credentials';
     }
 });
 </script>

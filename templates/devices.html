@@ -1,52 +1,45 @@
 {% extends "base.html" %}
-{% block title %}Devices - License Admin{% endblock %}
-{% block page_title %}Devices{% endblock %}
+{% block title %}Devices - HEX PROTOCOL{% endblock %}
+{% block page_title %}Registered Devices{% endblock %}
 {% block content %}
-<div class="glass-card p-6">
-    <h3 class="text-lg font-semibold mb-4">All Devices</h3>
-    <div class="overflow-x-auto">
-        <table class="w-full">
-            <thead>
-                <tr class="border-b border-gray-800">
-                    <th class="text-left py-3 px-4">Device ID</th>
-                    <th class="text-left py-3 px-4">License Key</th>
-                    <th class="text-left py-3 px-4">IP Address</th>
-                    <th class="text-left py-3 px-4">Last Seen</th>
-                    <th class="text-left py-3 px-4">Status</th>
-                    <th class="text-left py-3 px-4">Actions</th>
-                </tr>
-            </thead>
-            <tbody id="devicesTableBody">
-                <tr><td colspan="6" class="text-center py-4">Loading...</td></tr>
-            </tbody>
-        </table>
-    </div>
+
+<div class="card" style="margin-bottom: 20px; background: #3b82f610; border-color: #3b82f6;">
+    <h3 style="color: #3b82f6;"><i class="fas fa-info-circle"></i> How Device Registration Works</h3>
+    <p style="margin-top: 10px; font-size: 14px; color: #9ca3af;">
+        When a client sends a request to <code style="color: #3b82f6;">/api/v1/verify</code> with a new Device ID,
+        the system automatically registers and saves it. The device will be listed here.
+    </p>
 </div>
+
+<div class="card">
+    <h3 style="margin-bottom: 15px;">All Devices</h3>
+    <table>
+        <thead>
+            <tr><th>Device ID</th><th>License Key</th><th>Last Seen</th><th>Status</th><th>Actions</th></tr>
+        </thead>
+        <tbody id="devicesBody">
+            <tr><td colspan="5" style="text-align: center;">Loading...</td></tr>
+        </tbody>
+    </table>
+</div>
+
 {% endblock %}
 {% block scripts %}
 <script>
 function loadDevices() {
-    fetch('/admin/api/devices', {
-        headers: {'Authorization': `Bearer ${localStorage.getItem('token')}`}
-    })
-    .then(res => res.json())
+    fetch('/admin/api/devices', { headers: {'Authorization': `Bearer ${localStorage.getItem('token')}`} })
+    .then(r => r.json())
     .then(devices => {
-        const tbody = document.getElementById('devicesTableBody');
-        tbody.innerHTML = devices.map(device => `
-            <tr class="border-b border-gray-800 hover:bg-gray-800/50">
-                <td class="py-3 px-4 font-mono">${device.device_id}</td>
-                <td class="py-3 px-4 font-mono">${device.license_key}</td>
-                <td class="py-3 px-4">${device.ip_address || 'N/A'}</td>
-                <td class="py-3 px-4">${new Date(device.last_seen).toLocaleString()}</td>
-                <td class="py-3 px-4">
-                    <span class="px-2 py-1 rounded-full text-xs font-semibold ${device.is_banned ? 'bg-red-600/20 text-red-400' : 'bg-green-600/20 text-green-400'}">
-                        ${device.is_banned ? 'Banned' : 'Active'}
-                    </span>
-                </td>
-                <td class="py-3 px-4">
-                    ${device.is_banned 
-                        ? `<button onclick="unbanDevice('${device.device_id}')" class="text-green-400 hover:text-green-300">Unban</button>`
-                        : `<button onclick="banDevice('${device.device_id}')" class="text-yellow-400 hover:text-yellow-300">Ban</button>`
+        document.getElementById('devicesBody').innerHTML = devices.map(d => `
+            <tr>
+                <td style="font-family: monospace;">${d.device_id}</td>
+                <td style="font-family: monospace;">${d.license_key || 'N/A'}</td>
+                <td>${d.last_seen ? new Date(d.last_seen).toLocaleString() : 'N/A'}</td>
+                <td><span class="badge" style="background: ${d.is_banned ? '#ef444420' : '#10b98120'}; color: ${d.is_banned ? '#ef4444' : '#10b981'};">${d.is_banned ? 'Banned' : 'Active'}</span></td>
+                <td>
+                    ${d.is_banned 
+                        ? `<button onclick="unbanDevice('${d.device_id}')" style="color: #10b981; background: none; border: none; cursor: pointer;">Unban</button>`
+                        : `<button onclick="banDevice('${d.device_id}')" style="color: #ef4444; background: none; border: none; cursor: pointer;">Ban</button>`
                     }
                 </td>
             </tr>
@@ -54,26 +47,21 @@ function loadDevices() {
     });
 }
 
-function banDevice(deviceId) {
-    const reason = prompt('Reason for ban:');
+function banDevice(id) {
     const formData = new FormData();
-    formData.append('reason', reason || '');
     formData.append('is_permanent', 'true');
-    
-    fetch(`/admin/api/devices/${deviceId}/ban`, {
+    fetch(`/admin/api/devices/${id}/ban`, {
         method: 'PUT',
         headers: {'Authorization': `Bearer ${localStorage.getItem('token')}`},
         body: formData
-    })
-    .then(() => loadDevices());
+    }).then(() => loadDevices());
 }
 
-function unbanDevice(deviceId) {
-    fetch(`/admin/api/devices/${deviceId}/unban`, {
+function unbanDevice(id) {
+    fetch(`/admin/api/devices/${id}/unban`, {
         method: 'PUT',
         headers: {'Authorization': `Bearer ${localStorage.getItem('token')}`}
-    })
-    .then(() => loadDevices());
+    }).then(() => loadDevices());
 }
 
 loadDevices();

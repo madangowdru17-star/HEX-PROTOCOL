@@ -1,133 +1,153 @@
 {% extends "base.html" %}
 {% block title %}License Keys - HEX PROTOCOL{% endblock %}
-{% block page_title %}License Keys{% endblock %}
-{% block page_subtitle %}Generate & Manage Keys{% endblock %}
+{% block page_title %}License Key Generator{% endblock %}
 {% block content %}
 
-<!-- Generate Keys -->
-<div class="glass p-6 mb-8">
-    <h3 class="text-lg font-semibold mb-4"><i class="fas fa-plus-circle text-green-400 mr-2"></i>Generate New Keys</h3>
-    <form id="generateKeyForm" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        <div>
-            <label>Application</label>
-            <select id="appId" name="application_id" required>
-                <option value="">Select Application</option>
-            </select>
+<div class="card" style="margin-bottom: 20px;">
+    <h3 style="margin-bottom: 20px;"><i class="fas fa-key" style="color: #10b981;"></i> Generate License Keys</h3>
+    
+    <form id="generateForm">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+            <div>
+                <label>Application</label>
+                <select id="appId" required>
+                    <option value="">Loading...</option>
+                </select>
+            </div>
+            <div>
+                <label>Max Devices</label>
+                <input type="number" name="max_devices" value="1" min="1">
+            </div>
+            <div>
+                <label>Duration</label>
+                <select id="durationType" onchange="toggleDuration()">
+                    <option value="hours">Hours</option>
+                    <option value="days">Days</option>
+                    <option value="permanent">Permanent</option>
+                </select>
+            </div>
+            <div id="durationValueDiv">
+                <label>Value</label>
+                <input type="number" name="duration_value" value="1" min="1">
+            </div>
+            <div>
+                <label>Quantity</label>
+                <input type="number" name="quantity" value="1" min="1" max="50">
+            </div>
         </div>
-        <div>
-            <label>Max Devices</label>
-            <input type="number" name="max_devices" value="1" min="1" max="100">
-        </div>
-        <div>
-            <label>Duration Type</label>
-            <select id="durationType" name="duration_type" onchange="toggleDurationValue()">
-                <option value="hours">Hours</option>
-                <option value="days">Days</option>
-                <option value="permanent">Permanent</option>
-            </select>
-        </div>
-        <div id="durationValueDiv">
-            <label>Duration Value</label>
-            <input type="number" name="duration_value" value="1" min="1">
-        </div>
-        <div>
-            <label>Quantity</label>
-            <input type="number" name="quantity" value="1" min="1" max="100">
-        </div>
-        <div class="flex items-end">
-            <button type="submit" class="btn-gradient w-full py-3 rounded-xl font-semibold text-white">
-                <i class="fas fa-key mr-2"></i>Generate
-            </button>
-        </div>
+        <button type="submit" class="btn btn-primary" style="margin-top: 20px; width: 100%;">
+            <i class="fas fa-plus"></i> Generate Keys
+        </button>
     </form>
 </div>
 
-<!-- Keys Table -->
-<div class="glass p-6">
-    <div class="flex items-center justify-between mb-4">
-        <h3 class="text-lg font-semibold"><i class="fas fa-list text-blue-400 mr-2"></i>All Keys</h3>
-        <button onclick="loadKeys()" class="text-gray-400 hover:text-white transition-colors">
-            <i class="fas fa-rotate"></i> Refresh
-        </button>
-    </div>
-    <div class="overflow-x-auto">
-        <table class="w-full">
+<div id="generatedKeys" style="display: none; margin-bottom: 20px;" class="card">
+    <h3 style="color: #10b981; margin-bottom: 15px;"><i class="fas fa-check-circle"></i> Keys Generated Successfully!</h3>
+    <div id="generatedKeysList" style="display: grid; gap: 10px;"></div>
+    <button onclick="copyAllKeys()" class="btn btn-success" style="margin-top: 15px;">Copy All Keys</button>
+</div>
+
+<div class="card">
+    <h3 style="margin-bottom: 15px;">All License Keys</h3>
+    <div style="overflow-x: auto;">
+        <table>
             <thead>
-                <tr class="border-b border-white/10 text-left">
-                    <th class="py-3 px-4 text-xs uppercase tracking-wider">Key</th>
-                    <th class="py-3 px-4 text-xs uppercase tracking-wider">App</th>
-                    <th class="py-3 px-4 text-xs uppercase tracking-wider">Status</th>
-                    <th class="py-3 px-4 text-xs uppercase tracking-wider">Devices</th>
-                    <th class="py-3 px-4 text-xs uppercase tracking-wider">Expiry</th>
-                    <th class="py-3 px-4 text-xs uppercase tracking-wider">Actions</th>
+                <tr>
+                    <th>Key</th>
+                    <th>App</th>
+                    <th>Status</th>
+                    <th>Devices</th>
+                    <th>Expires</th>
+                    <th>Actions</th>
                 </tr>
             </thead>
-            <tbody id="keysTableBody">
-                <tr><td colspan="6" class="text-center py-8 text-gray-500">Loading...</td></tr>
+            <tbody id="keysBody">
+                <tr><td colspan="6" style="text-align: center; color: #9ca3af;">Loading...</td></tr>
             </tbody>
         </table>
     </div>
 </div>
+
 {% endblock %}
 {% block scripts %}
 <script>
-function toggleDurationValue() {
-    const type = document.getElementById('durationType').value;
-    const div = document.getElementById('durationValueDiv');
-    div.style.display = type === 'permanent' ? 'none' : 'block';
+function toggleDuration() {
+    document.getElementById('durationValueDiv').style.display = 
+        document.getElementById('durationType').value === 'permanent' ? 'none' : 'block';
+}
+
+function loadApps() {
+    fetch('/admin/api/apps', { headers: {'Authorization': `Bearer ${localStorage.getItem('token')}`} })
+    .then(r => r.json())
+    .then(apps => {
+        document.getElementById('appId').innerHTML = 
+            '<option value="">Select App</option>' + 
+            apps.map(a => `<option value="${a.id}">${a.name}</option>`).join('');
+    });
 }
 
 function loadKeys() {
-    fetch('/admin/api/keys', {
-        headers: {'Authorization': `Bearer ${localStorage.getItem('token')}`}
-    })
-    .then(res => res.json())
+    fetch('/admin/api/keys', { headers: {'Authorization': `Bearer ${localStorage.getItem('token')}`} })
+    .then(r => r.json())
     .then(keys => {
-        const tbody = document.getElementById('keysTableBody');
-        if (keys.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="6" class="text-center py-8 text-gray-500">No keys found</td></tr>';
-            return;
-        }
-        tbody.innerHTML = keys.map(key => `
-            <tr class="border-b border-white/5 table-row">
-                <td class="py-3 px-4 font-mono text-sm">${key.key}</td>
-                <td class="py-3 px-4">${key.app_name || 'N/A'}</td>
-                <td class="py-3 px-4">
-                    <span class="status-badge ${
-                        key.status === 'ACTIVE' ? 'bg-green-500/20 text-green-400' :
-                        key.status === 'EXPIRED' ? 'bg-red-500/20 text-red-400' :
-                        key.status === 'BANNED' ? 'bg-yellow-500/20 text-yellow-400' :
-                        key.status === 'REVOKED' ? 'bg-orange-500/20 text-orange-400' :
-                        'bg-gray-500/20 text-gray-400'
-                    }">${key.status}</span>
-                </td>
-                <td class="py-3 px-4">${key.max_devices}</td>
-                <td class="py-3 px-4 text-sm">${key.expires_at ? new Date(key.expires_at).toLocaleDateString() : 'Permanent'}</td>
-                <td class="py-3 px-4">
-                    <button onclick="changeStatus(${key.id}, 'BANNED')" class="text-yellow-400 hover:text-yellow-300 mr-3 text-sm">
-                        <i class="fas fa-ban"></i>
-                    </button>
-                    <button onclick="changeStatus(${key.id}, 'ACTIVE')" class="text-green-400 hover:text-green-300 mr-3 text-sm">
-                        <i class="fas fa-check"></i>
-                    </button>
-                    <button onclick="deleteKey(${key.id})" class="text-red-400 hover:text-red-300 text-sm">
-                        <i class="fas fa-trash"></i>
-                    </button>
+        const tbody = document.getElementById('keysBody');
+        tbody.innerHTML = keys.map(k => `
+            <tr>
+                <td style="font-family: monospace;">${k.key}</td>
+                <td>${k.app_name || 'N/A'}</td>
+                <td><span class="badge" style="background: ${k.status === 'ACTIVE' ? '#10b98120' : k.status === 'EXPIRED' ? '#ef444420' : '#f59e0b20'}; color: ${k.status === 'ACTIVE' ? '#10b981' : k.status === 'EXPIRED' ? '#ef4444' : '#f59e0b'};">${k.status}</span></td>
+                <td>${k.max_devices}</td>
+                <td>${k.expires_at ? new Date(k.expires_at).toLocaleDateString() : 'Permanent'}</td>
+                <td>
+                    <button onclick="banKey(${k.id})" style="background: none; border: none; color: #f59e0b; cursor: pointer;">Ban</button>
+                    <button onclick="deleteKey(${k.id})" style="background: none; border: none; color: #ef4444; cursor: pointer;">Delete</button>
                 </td>
             </tr>
         `).join('');
     });
 }
 
-function changeStatus(id, status) {
+document.getElementById('generateForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const formData = new FormData(this);
+    const type = document.getElementById('durationType').value;
+    const value = formData.get('duration_value');
+    
+    if (type === 'hours') formData.append('hours', value);
+    else if (type === 'days') formData.append('days', value);
+    else formData.append('is_permanent', 'true');
+    
+    const response = await fetch('/admin/api/keys', {
+        method: 'POST',
+        headers: {'Authorization': `Bearer ${localStorage.getItem('token')}`},
+        body: formData
+    });
+    const data = await response.json();
+    
+    if (data.keys) {
+        const list = document.getElementById('generatedKeysList');
+        list.innerHTML = data.keys.map(k => 
+            `<div style="background: #0a0a0f; padding: 10px; border-radius: 8px; font-family: monospace; border: 1px solid #10b981;">${k.key}</div>`
+        ).join('');
+        document.getElementById('generatedKeys').style.display = 'block';
+        loadKeys();
+    }
+});
+
+function copyAllKeys() {
+    const keys = [...document.querySelectorAll('#generatedKeysList div')].map(d => d.textContent).join('\n');
+    navigator.clipboard.writeText(keys);
+    alert('Keys copied!');
+}
+
+function banKey(id) {
     const formData = new FormData();
-    formData.append('status', status);
+    formData.append('status', 'BANNED');
     fetch(`/admin/api/keys/${id}/status`, {
         method: 'PUT',
         headers: {'Authorization': `Bearer ${localStorage.getItem('token')}`},
         body: formData
-    })
-    .then(() => loadKeys());
+    }).then(() => loadKeys());
 }
 
 function deleteKey(id) {
@@ -135,57 +155,11 @@ function deleteKey(id) {
         fetch(`/admin/api/keys/${id}`, {
             method: 'DELETE',
             headers: {'Authorization': `Bearer ${localStorage.getItem('token')}`}
-        })
-        .then(() => loadKeys());
+        }).then(() => loadKeys());
     }
 }
 
-function loadApps() {
-    fetch('/admin/api/apps', {
-        headers: {'Authorization': `Bearer ${localStorage.getItem('token')}`}
-    })
-    .then(res => res.json())
-    .then(apps => {
-        const select = document.getElementById('appId');
-        select.innerHTML = '<option value="">Select Application</option>' + 
-            apps.map(app => `<option value="${app.id}">${app.name}</option>`).join('');
-    });
-}
-
-document.getElementById('generateKeyForm').addEventListener('submit', async function(e) {
-    e.preventDefault();
-    const formData = new FormData(this);
-    const durationType = formData.get('duration_type');
-    const durationValue = formData.get('duration_value');
-    
-    if (durationType === 'hours') {
-        formData.append('hours', durationValue);
-    } else if (durationType === 'days') {
-        formData.append('days', durationValue);
-    } else {
-        formData.append('is_permanent', 'true');
-    }
-    
-    try {
-        const response = await fetch('/admin/api/keys', {
-            method: 'POST',
-            headers: {'Authorization': `Bearer ${localStorage.getItem('token')}`},
-            body: formData
-        });
-        const data = await response.json();
-        if (data.keys) {
-            alert(`Generated ${data.keys.length} key(s):\n\n${data.keys.map(k => k.key).join('\n')}`);
-            loadKeys();
-            this.reset();
-        } else {
-            alert('Error generating keys');
-        }
-    } catch (error) {
-        alert('Error: ' + error.message);
-    }
-});
-
-toggleDurationValue();
+toggleDuration();
 loadApps();
 loadKeys();
 </script>

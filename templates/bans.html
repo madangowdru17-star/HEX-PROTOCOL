@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block title %}Security & Bans - HEX PROTOCOL{% endblock %}
+{% block page_title %}Security & Bans{% endblock %}
+{% block content %}
+
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+    <div class="card">
+        <h3 style="margin-bottom: 15px;"><i class="fas fa-ban" style="color: #ef4444;"></i> Ban IP Address</h3>
+        <form id="banIpForm">
+            <div style="margin-bottom: 15px;">
+                <label>IP Address</label>
+                <input type="text" name="ip_address" placeholder="e.g. 192.168.1.1" required>
+            </div>
+            <div style="margin-bottom: 15px;">
+                <label>Reason</label>
+                <input type="text" name="reason" placeholder="Optional">
+            </div>
+            <button type="submit" class="btn btn-danger" style="width: 100%;">Ban IP</button>
+        </form>
+    </div>
+    
+    <div class="card">
+        <h3 style="margin-bottom: 15px;">Active IP Bans</h3>
+        <div id="ipBansList">
+            <p style="color: #9ca3af;">Loading...</p>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+{% block scripts %}
+<script>
+function loadBans() {
+    fetch('/admin/api/ip-bans', { headers: {'Authorization': `Bearer ${localStorage.getItem('token')}`} })
+    .then(r => r.json())
+    .then(bans => {
+        const list = document.getElementById('ipBansList');
+        if (bans.length === 0) {
+            list.innerHTML = '<p style="color: #9ca3af;">No IP bans</p>';
+            return;
+        }
+        list.innerHTML = bans.map(b => `
+            <div style="display: flex; justify-content: space-between; align-items: center; background: #0a0a0f; padding: 10px; border-radius: 8px; margin-bottom: 10px;">
+                <div>
+                    <p style="font-family: monospace;">${b.ip_address}</p>
+                    <p style="font-size: 12px; color: #9ca3af;">${b.reason || 'No reason'}</p>
+                </div>
+                <button onclick="removeBan(${b.id})" style="background: none; border: none; color: #ef4444; cursor: pointer;">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        `).join('');
+    });
+}
+
+document.getElementById('banIpForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const formData = new FormData(this);
+    formData.append('is_permanent', 'true');
+    await fetch('/admin/api/ip-bans', {
+        method: 'POST',
+        headers: {'Authorization': `Bearer ${localStorage.getItem('token')}`},
+        body: formData
+    });
+    loadBans();
+    this.reset();
+});
+
+function removeBan(id) {
+    fetch(`/admin/api/ip-bans/${id}`, {
+        method: 'DELETE',
+        headers: {'Authorization': `Bearer ${localStorage.getItem('token')}`}
+    }).then(() => loadBans());
+}
+
+loadBans();
+</script>
+{% endblock %}
