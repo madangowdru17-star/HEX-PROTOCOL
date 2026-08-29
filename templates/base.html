@@ -3,24 +3,218 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}License Admin Panel{% endblock %}</title>
+    <title>{% block title %}HEX PROTOCOL - Control Panel{% endblock %}</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * { font-family: 'Inter', sans-serif; }
+        body {
+            background: #0a0a0f;
+            background-image: 
+                radial-gradient(ellipse at top left, rgba(59, 130, 246, 0.1) 0%, transparent 50%),
+                radial-gradient(ellipse at bottom right, rgba(147, 51, 234, 0.1) 0%, transparent 50%);
+            min-height: 100vh;
+        }
+        .glass {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+        }
+        .glass-hover:hover {
+            background: rgba(255, 255, 255, 0.06);
+            border-color: rgba(255, 255, 255, 0.15);
+            transform: translateY(-2px);
+            transition: all 0.3s ease;
+        }
+        .sidebar {
+            transition: transform 0.3s ease-in-out;
+        }
+        .sidebar.open {
+            transform: translateX(0);
+        }
+        @media (max-width: 1024px) {
+            .sidebar {
+                transform: translateX(-100%);
+                position: fixed;
+                z-index: 50;
+                height: 100vh;
+            }
+            .sidebar.open {
+                transform: translateX(0);
+            }
+            .overlay {
+                display: none;
+                position: fixed;
+                inset: 0;
+                background: rgba(0, 0, 0, 0.5);
+                z-index: 40;
+            }
+            .overlay.active {
+                display: block;
+            }
+        }
+        .btn-gradient {
+            background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+            transition: all 0.3s ease;
+        }
+        .btn-gradient:hover {
+            background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
+            box-shadow: 0 4px 20px rgba(59, 130, 246, 0.4);
+        }
+        .stat-card {
+            transition: all 0.3s ease;
+        }
+        .stat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+        }
+        .text-gradient {
+            background: linear-gradient(135deg, #60a5fa 0%, #a78bfa 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 9999px;
+            font-size: 12px;
+            font-weight: 600;
+            display: inline-block;
+        }
+        .table-row:hover {
+            background: rgba(255, 255, 255, 0.03);
+        }
+        input, select, textarea {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 10px 14px;
+            color: #e5e5e5;
+            width: 100%;
+            transition: all 0.3s ease;
+        }
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+        }
+        label {
+            font-size: 13px;
+            font-weight: 500;
+            color: #9ca3af;
+            margin-bottom: 6px;
+            display: block;
+        }
+    </style>
 </head>
-<body class="bg-gray-950 text-gray-100 min-h-screen flex">
+<body class="text-gray-200">
     {% if request.url.path != '/admin/login' %}
-        {% include 'partials/sidebar.html' %}
+    <!-- Mobile Overlay -->
+    <div id="overlay" class="overlay"></div>
+    
+    <!-- Sidebar -->
+    <aside id="sidebar" class="sidebar w-72 bg-[#0d0d15]/95 backdrop-blur-xl border-r border-white/10 flex flex-col fixed h-full z-50">
+        <div class="p-6 border-b border-white/10">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-2xl font-bold text-gradient">HEX PROTOCOL</h1>
+                    <p class="text-xs text-gray-500 mt-1">Control Panel v2.0</p>
+                </div>
+                <button onclick="closeSidebar()" class="lg:hidden text-gray-400 hover:text-white p-2">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+        </div>
+        
+        <nav class="flex-1 p-4 space-y-1 overflow-y-auto">
+            <a href="/admin/dashboard" class="nav-link flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-white/5 transition-all group">
+                <i class="fas fa-chart-line w-5 text-blue-400 group-hover:scale-110 transition-transform"></i>
+                <span>Dashboard</span>
+            </a>
+            <a href="/admin/keys" class="nav-link flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-white/5 transition-all group">
+                <i class="fas fa-key w-5 text-green-400 group-hover:scale-110 transition-transform"></i>
+                <span>License Keys</span>
+            </a>
+            <a href="/admin/apps" class="nav-link flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-white/5 transition-all group">
+                <i class="fas fa-cubes w-5 text-purple-400 group-hover:scale-110 transition-transform"></i>
+                <span>Applications</span>
+            </a>
+            <a href="/admin/devices" class="nav-link flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-white/5 transition-all group">
+                <i class="fas fa-microchip w-5 text-cyan-400 group-hover:scale-110 transition-transform"></i>
+                <span>Devices</span>
+            </a>
+            <a href="/admin/bans" class="nav-link flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-white/5 transition-all group">
+                <i class="fas fa-shield-halved w-5 text-red-400 group-hover:scale-110 transition-transform"></i>
+                <span>Security & Bans</span>
+            </a>
+            <a href="/admin/logs" class="nav-link flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-white/5 transition-all group">
+                <i class="fas fa-scroll w-5 text-yellow-400 group-hover:scale-110 transition-transform"></i>
+                <span>System Logs</span>
+            </a>
+            <a href="/admin/settings" class="nav-link flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-white/5 transition-all group">
+                <i class="fas fa-gear w-5 text-gray-400 group-hover:scale-110 transition-transform"></i>
+                <span>Settings</span>
+            </a>
+        </nav>
+        
+        <div class="p-4 border-t border-white/10">
+            <button onclick="logout()" class="w-full flex items-center gap-3 px-4 py-3 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-all">
+                <i class="fas fa-right-from-bracket"></i>
+                <span>Logout</span>
+            </button>
+        </div>
+    </aside>
     {% endif %}
-    <div class="flex-1 flex flex-col min-h-screen">
+    
+    <!-- Main Content -->
+    <div class="{% if request.url.path != '/admin/login' %}lg:ml-72{% endif %} flex flex-col min-h-screen">
         {% if request.url.path != '/admin/login' %}
-            {% include 'partials/topbar.html' %}
+        <!-- Topbar -->
+        <header class="sticky top-0 z-30 bg-[#0d0d15]/80 backdrop-blur-xl border-b border-white/10 px-6 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-4">
+                    <button onclick="openSidebar()" class="lg:hidden text-gray-400 hover:text-white p-2">
+                        <i class="fas fa-bars text-xl"></i>
+                    </button>
+                    <div>
+                        <h2 class="text-xl font-semibold">{% block page_title %}Dashboard{% endblock %}</h2>
+                        <p class="text-xs text-gray-500">{% block page_subtitle %}Overview{% endblock %}</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-4">
+                    <div class="hidden md:flex items-center gap-2 bg-green-500/10 text-green-400 px-3 py-2 rounded-lg text-xs">
+                        <span class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
+                        System Online
+                    </div>
+                    <div class="w-10 h-10 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center">
+                        <span class="text-sm font-bold">AD</span>
+                    </div>
+                </div>
+            </div>
+        </header>
         {% endif %}
+        
+        <!-- Content -->
         <main class="flex-1 p-6">
             {% block content %}{% endblock %}
         </main>
     </div>
+    
     <script src="/static/js/main.js"></script>
+    <script>
+        function openSidebar() {
+            document.getElementById('sidebar').classList.add('open');
+            document.getElementById('overlay').classList.add('active');
+        }
+        function closeSidebar() {
+            document.getElementById('sidebar').classList.remove('open');
+            document.getElementById('overlay').classList.remove('active');
+        }
+        document.getElementById('overlay').addEventListener('click', closeSidebar);
+    </script>
     {% block scripts %}{% endblock %}
 </body>
 </html>

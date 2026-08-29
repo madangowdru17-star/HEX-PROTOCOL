@@ -1,41 +1,48 @@
 {% extends "base.html" %}
-{% block title %}Applications - License Admin{% endblock %}
+{% block title %}Applications - HEX PROTOCOL{% endblock %}
 {% block page_title %}Applications{% endblock %}
+{% block page_subtitle %}Manage API Applications{% endblock %}
 {% block content %}
-<div class="glass-card p-6 mb-6">
-    <h3 class="text-lg font-semibold mb-4">Create Application</h3>
+
+<div class="glass p-6 mb-8">
+    <h3 class="text-lg font-semibold mb-4"><i class="fas fa-plus-circle text-purple-400 mr-2"></i>Create Application</h3>
     <form id="createAppForm" class="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div>
-            <label class="block text-sm font-medium mb-2">Name</label>
-            <input type="text" name="name" required class="w-full px-4 py-3 rounded-lg bg-gray-800 border border-gray-700 focus:border-blue-500 focus:outline-none">
+            <label>Application Name</label>
+            <input type="text" name="name" required placeholder="e.g. My Java App">
         </div>
         <div>
-            <label class="block text-sm font-medium mb-2">Description</label>
-            <input type="text" name="description" class="w-full px-4 py-3 rounded-lg bg-gray-800 border border-gray-700 focus:border-blue-500 focus:outline-none">
+            <label>Description</label>
+            <input type="text" name="description" placeholder="Optional description">
         </div>
         <div class="flex items-end">
-            <button type="submit" class="w-full px-4 py-3 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 transition-all font-semibold">
-                Create App
+            <button type="submit" class="btn-gradient w-full py-3 rounded-xl font-semibold text-white">
+                <i class="fas fa-cube mr-2"></i>Create App
             </button>
         </div>
     </form>
 </div>
 
-<div class="glass-card p-6">
-    <h3 class="text-lg font-semibold mb-4">All Applications</h3>
+<div class="glass p-6">
+    <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-semibold"><i class="fas fa-cubes text-purple-400 mr-2"></i>All Applications</h3>
+        <button onclick="loadApps()" class="text-gray-400 hover:text-white">
+            <i class="fas fa-rotate"></i>
+        </button>
+    </div>
     <div class="overflow-x-auto">
         <table class="w-full">
             <thead>
-                <tr class="border-b border-gray-800">
-                    <th class="text-left py-3 px-4">Name</th>
-                    <th class="text-left py-3 px-4">Description</th>
-                    <th class="text-left py-3 px-4">Status</th>
-                    <th class="text-left py-3 px-4">Licenses</th>
-                    <th class="text-left py-3 px-4">Actions</th>
+                <tr class="border-b border-white/10 text-left">
+                    <th class="py-3 px-4 text-xs uppercase">Name</th>
+                    <th class="py-3 px-4 text-xs uppercase">Description</th>
+                    <th class="py-3 px-4 text-xs uppercase">Status</th>
+                    <th class="py-3 px-4 text-xs uppercase">Keys</th>
+                    <th class="py-3 px-4 text-xs uppercase">Actions</th>
                 </tr>
             </thead>
             <tbody id="appsTableBody">
-                <tr><td colspan="5" class="text-center py-4">Loading...</td></tr>
+                <tr><td colspan="5" class="text-center py-8 text-gray-500">Loading...</td></tr>
             </tbody>
         </table>
     </div>
@@ -50,19 +57,23 @@ function loadApps() {
     .then(res => res.json())
     .then(apps => {
         const tbody = document.getElementById('appsTableBody');
+        if (apps.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" class="text-center py-8">No applications found</td></tr>';
+            return;
+        }
         tbody.innerHTML = apps.map(app => `
-            <tr class="border-b border-gray-800 hover:bg-gray-800/50">
-                <td class="py-3 px-4">${app.name}</td>
-                <td class="py-3 px-4">${app.description || '-'}</td>
+            <tr class="border-b border-white/5 table-row">
+                <td class="py-3 px-4 font-semibold">${app.name}</td>
+                <td class="py-3 px-4 text-gray-400">${app.description || '-'}</td>
                 <td class="py-3 px-4">
-                    <span class="px-2 py-1 rounded-full text-xs font-semibold ${app.is_active ? 'bg-green-600/20 text-green-400' : 'bg-red-600/20 text-red-400'}">
+                    <span class="status-badge ${app.is_active ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}">
                         ${app.is_active ? 'Active' : 'Inactive'}
                     </span>
                 </td>
                 <td class="py-3 px-4">${app.license_count}</td>
                 <td class="py-3 px-4">
-                    <button onclick="toggleApp(${app.id})" class="text-blue-400 hover:text-blue-300">
-                        ${app.is_active ? 'Deactivate' : 'Activate'}
+                    <button onclick="toggleApp(${app.id})" class="text-blue-400 hover:text-blue-300 text-sm">
+                        <i class="fas fa-power-off mr-1"></i>${app.is_active ? 'Deactivate' : 'Activate'}
                     </button>
                 </td>
             </tr>
@@ -90,8 +101,9 @@ document.getElementById('createAppForm').addEventListener('submit', async functi
         });
         const data = await response.json();
         if (data.api_key) {
-            alert(`Application created!\nAPI Key: ${data.api_key}\n\nSave this key now!`);
+            alert(`Application Created!\n\nApp ID: ${data.id}\nAPI Key: ${data.api_key}\n\nSAVE THIS KEY NOW!`);
             loadApps();
+            this.reset();
         }
     } catch (error) {
         alert('Error creating application');

@@ -1,60 +1,69 @@
 {% extends "base.html" %}
-{% block title %}License Keys - License Admin{% endblock %}
+{% block title %}License Keys - HEX PROTOCOL{% endblock %}
 {% block page_title %}License Keys{% endblock %}
+{% block page_subtitle %}Generate & Manage Keys{% endblock %}
 {% block content %}
-<div class="glass-card p-6 mb-6">
-    <h3 class="text-lg font-semibold mb-4">Generate New Keys</h3>
-    <form id="generateKeyForm" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+<!-- Generate Keys -->
+<div class="glass p-6 mb-8">
+    <h3 class="text-lg font-semibold mb-4"><i class="fas fa-plus-circle text-green-400 mr-2"></i>Generate New Keys</h3>
+    <form id="generateKeyForm" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <div>
-            <label class="block text-sm font-medium mb-2">Application</label>
-            <select id="appId" name="application_id" class="w-full px-4 py-3 rounded-lg bg-gray-800 border border-gray-700 focus:border-blue-500 focus:outline-none">
-                <option value="">Loading...</option>
+            <label>Application</label>
+            <select id="appId" name="application_id" required>
+                <option value="">Select Application</option>
             </select>
         </div>
         <div>
-            <label class="block text-sm font-medium mb-2">Max Devices</label>
-            <input type="number" name="max_devices" value="1" min="1" class="w-full px-4 py-3 rounded-lg bg-gray-800 border border-gray-700 focus:border-blue-500 focus:outline-none">
+            <label>Max Devices</label>
+            <input type="number" name="max_devices" value="1" min="1" max="100">
         </div>
         <div>
-            <label class="block text-sm font-medium mb-2">Duration</label>
-            <select id="durationType" name="duration_type" class="w-full px-4 py-3 rounded-lg bg-gray-800 border border-gray-700 focus:border-blue-500 focus:outline-none">
+            <label>Duration Type</label>
+            <select id="durationType" name="duration_type" onchange="toggleDurationValue()">
                 <option value="hours">Hours</option>
                 <option value="days">Days</option>
                 <option value="permanent">Permanent</option>
             </select>
         </div>
         <div id="durationValueDiv">
-            <label class="block text-sm font-medium mb-2">Value</label>
-            <input type="number" name="duration_value" value="1" min="1" class="w-full px-4 py-3 rounded-lg bg-gray-800 border border-gray-700 focus:border-blue-500 focus:outline-none">
+            <label>Duration Value</label>
+            <input type="number" name="duration_value" value="1" min="1">
         </div>
         <div>
-            <label class="block text-sm font-medium mb-2">Quantity</label>
-            <input type="number" name="quantity" value="1" min="1" max="100" class="w-full px-4 py-3 rounded-lg bg-gray-800 border border-gray-700 focus:border-blue-500 focus:outline-none">
+            <label>Quantity</label>
+            <input type="number" name="quantity" value="1" min="1" max="100">
         </div>
         <div class="flex items-end">
-            <button type="submit" class="w-full px-4 py-3 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 transition-all font-semibold">
-                Generate Keys
+            <button type="submit" class="btn-gradient w-full py-3 rounded-xl font-semibold text-white">
+                <i class="fas fa-key mr-2"></i>Generate
             </button>
         </div>
     </form>
 </div>
 
-<div class="glass-card p-6">
-    <h3 class="text-lg font-semibold mb-4">All Keys</h3>
+<!-- Keys Table -->
+<div class="glass p-6">
+    <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-semibold"><i class="fas fa-list text-blue-400 mr-2"></i>All Keys</h3>
+        <button onclick="loadKeys()" class="text-gray-400 hover:text-white transition-colors">
+            <i class="fas fa-rotate"></i> Refresh
+        </button>
+    </div>
     <div class="overflow-x-auto">
         <table class="w-full">
             <thead>
-                <tr class="border-b border-gray-800">
-                    <th class="text-left py-3 px-4">Key</th>
-                    <th class="text-left py-3 px-4">Application</th>
-                    <th class="text-left py-3 px-4">Status</th>
-                    <th class="text-left py-3 px-4">Max Devices</th>
-                    <th class="text-left py-3 px-4">Expires At</th>
-                    <th class="text-left py-3 px-4">Actions</th>
+                <tr class="border-b border-white/10 text-left">
+                    <th class="py-3 px-4 text-xs uppercase tracking-wider">Key</th>
+                    <th class="py-3 px-4 text-xs uppercase tracking-wider">App</th>
+                    <th class="py-3 px-4 text-xs uppercase tracking-wider">Status</th>
+                    <th class="py-3 px-4 text-xs uppercase tracking-wider">Devices</th>
+                    <th class="py-3 px-4 text-xs uppercase tracking-wider">Expiry</th>
+                    <th class="py-3 px-4 text-xs uppercase tracking-wider">Actions</th>
                 </tr>
             </thead>
             <tbody id="keysTableBody">
-                <tr><td colspan="6" class="text-center py-4">Loading...</td></tr>
+                <tr><td colspan="6" class="text-center py-8 text-gray-500">Loading...</td></tr>
             </tbody>
         </table>
     </div>
@@ -62,6 +71,12 @@
 {% endblock %}
 {% block scripts %}
 <script>
+function toggleDurationValue() {
+    const type = document.getElementById('durationType').value;
+    const div = document.getElementById('durationValueDiv');
+    div.style.display = type === 'permanent' ? 'none' : 'block';
+}
+
 function loadKeys() {
     fetch('/admin/api/keys', {
         headers: {'Authorization': `Bearer ${localStorage.getItem('token')}`}
@@ -69,23 +84,35 @@ function loadKeys() {
     .then(res => res.json())
     .then(keys => {
         const tbody = document.getElementById('keysTableBody');
+        if (keys.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" class="text-center py-8 text-gray-500">No keys found</td></tr>';
+            return;
+        }
         tbody.innerHTML = keys.map(key => `
-            <tr class="border-b border-gray-800 hover:bg-gray-800/50">
-                <td class="py-3 px-4 font-mono">${key.key}</td>
-                <td class="py-3 px-4">${key.app_name}</td>
+            <tr class="border-b border-white/5 table-row">
+                <td class="py-3 px-4 font-mono text-sm">${key.key}</td>
+                <td class="py-3 px-4">${key.app_name || 'N/A'}</td>
                 <td class="py-3 px-4">
-                    <span class="px-2 py-1 rounded-full text-xs font-semibold ${
-                        key.status === 'ACTIVE' ? 'bg-green-600/20 text-green-400' :
-                        key.status === 'EXPIRED' ? 'bg-red-600/20 text-red-400' :
-                        key.status === 'BANNED' ? 'bg-yellow-600/20 text-yellow-400' :
-                        'bg-gray-600/20 text-gray-400'
+                    <span class="status-badge ${
+                        key.status === 'ACTIVE' ? 'bg-green-500/20 text-green-400' :
+                        key.status === 'EXPIRED' ? 'bg-red-500/20 text-red-400' :
+                        key.status === 'BANNED' ? 'bg-yellow-500/20 text-yellow-400' :
+                        key.status === 'REVOKED' ? 'bg-orange-500/20 text-orange-400' :
+                        'bg-gray-500/20 text-gray-400'
                     }">${key.status}</span>
                 </td>
                 <td class="py-3 px-4">${key.max_devices}</td>
-                <td class="py-3 px-4">${key.expires_at ? new Date(key.expires_at).toLocaleString() : 'Permanent'}</td>
+                <td class="py-3 px-4 text-sm">${key.expires_at ? new Date(key.expires_at).toLocaleDateString() : 'Permanent'}</td>
                 <td class="py-3 px-4">
-                    <button onclick="changeStatus(${key.id}, 'BANNED')" class="text-yellow-400 hover:text-yellow-300 mr-2">Ban</button>
-                    <button onclick="changeStatus(${key.id}, 'ACTIVE')" class="text-green-400 hover:text-green-300">Activate</button>
+                    <button onclick="changeStatus(${key.id}, 'BANNED')" class="text-yellow-400 hover:text-yellow-300 mr-3 text-sm">
+                        <i class="fas fa-ban"></i>
+                    </button>
+                    <button onclick="changeStatus(${key.id}, 'ACTIVE')" class="text-green-400 hover:text-green-300 mr-3 text-sm">
+                        <i class="fas fa-check"></i>
+                    </button>
+                    <button onclick="deleteKey(${key.id})" class="text-red-400 hover:text-red-300 text-sm">
+                        <i class="fas fa-trash"></i>
+                    </button>
                 </td>
             </tr>
         `).join('');
@@ -103,6 +130,16 @@ function changeStatus(id, status) {
     .then(() => loadKeys());
 }
 
+function deleteKey(id) {
+    if (confirm('Delete this key?')) {
+        fetch(`/admin/api/keys/${id}`, {
+            method: 'DELETE',
+            headers: {'Authorization': `Bearer ${localStorage.getItem('token')}`}
+        })
+        .then(() => loadKeys());
+    }
+}
+
 function loadApps() {
     fetch('/admin/api/apps', {
         headers: {'Authorization': `Bearer ${localStorage.getItem('token')}`}
@@ -110,7 +147,8 @@ function loadApps() {
     .then(res => res.json())
     .then(apps => {
         const select = document.getElementById('appId');
-        select.innerHTML = apps.map(app => `<option value="${app.id}">${app.name}</option>`).join('');
+        select.innerHTML = '<option value="">Select Application</option>' + 
+            apps.map(app => `<option value="${app.id}">${app.name}</option>`).join('');
     });
 }
 
@@ -136,14 +174,18 @@ document.getElementById('generateKeyForm').addEventListener('submit', async func
         });
         const data = await response.json();
         if (data.keys) {
-            alert(`Generated ${data.keys.length} key(s):\n${data.keys.map(k => k.key).join('\n')}`);
+            alert(`Generated ${data.keys.length} key(s):\n\n${data.keys.map(k => k.key).join('\n')}`);
             loadKeys();
+            this.reset();
+        } else {
+            alert('Error generating keys');
         }
     } catch (error) {
-        alert('Error generating keys');
+        alert('Error: ' + error.message);
     }
 });
 
+toggleDurationValue();
 loadApps();
 loadKeys();
 </script>
