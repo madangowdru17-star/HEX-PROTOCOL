@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 import time
 import logging
+import os
 
 from app.database import engine, Base, get_db
 from app.routers import router
@@ -72,3 +73,12 @@ async def add_process_time_header(request: Request, call_next):
 @app.get("/")
 async def root():
     return {"message": "License Admin Panel API", "docs": "/docs", "admin": "/admin/login"}
+
+@app.get("/health")
+async def health_check():
+    return {"status": "healthy"}
+
+if __name__ == "__main__":
+    import uvicorn
+    port = int(os.environ.get("PORT", 8000))
+    uvicorn.run(app, host="0.0.0.0", port=port)
