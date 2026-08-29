@@ -1,6 +1,5 @@
-// License Admin Panel - Main JavaScript
+// HEX PROTOCOL - Main JavaScript
 
-// Authentication helper
 function getToken() {
     return localStorage.getItem('token');
 }
@@ -10,7 +9,6 @@ function logout() {
     window.location.href = '/admin/login';
 }
 
-// Check authentication on protected pages
 function checkAuth() {
     const token = getToken();
     if (!token && window.location.pathname !== '/admin/login') {
@@ -18,8 +16,7 @@ function checkAuth() {
     }
 }
 
-// API helper function
-async function apiRequest(url, method = 'GET', data = null, isFormData = false) {
+async function apiRequest(url, method = 'GET', data = null) {
     const token = getToken();
     const headers = {};
     
@@ -33,12 +30,7 @@ async function apiRequest(url, method = 'GET', data = null, isFormData = false) 
     };
     
     if (data) {
-        if (isFormData) {
-            options.body = data;
-        } else {
-            headers['Content-Type'] = 'application/json';
-            options.body = JSON.stringify(data);
-        }
+        options.body = data;
     }
     
     const response = await fetch(url, options);
@@ -51,22 +43,17 @@ async function apiRequest(url, method = 'GET', data = null, isFormData = false) 
     return response;
 }
 
-// Format date helper
-function formatDate(dateString) {
-    if (!dateString) return 'Permanent';
-    const date = new Date(dateString);
-    return date.toLocaleString();
-}
-
-// Initialize on page load
+// Initialize
 document.addEventListener('DOMContentLoaded', function() {
     checkAuth();
     
-    // Add active class to current nav link
+    // Set active nav link
     const currentPath = window.location.pathname;
     document.querySelectorAll('.nav-link').forEach(link => {
         if (link.getAttribute('href') === currentPath) {
-            link.classList.add('active');
+            link.classList.add('bg-white/10');
+            link.classList.add('border-l-4');
+            link.classList.add('border-blue-500');
         }
     });
 });
