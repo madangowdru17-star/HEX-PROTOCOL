@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}Login - License Admin{% endblock %}
+{% block content %}
+<div class="flex items-center justify-center min-h-screen">
+    <div class="glass-card p-8 w-full max-w-md">
+        <div class="text-center mb-8">
+            <h1 class="text-3xl font-bold bg-gradient-to-r from-blue-500 to-purple-600 bg-clip-text text-transparent">
+                License Admin Panel
+            </h1>
+            <p class="text-gray-400 mt-2">Sign in to continue</p>
+        </div>
+        <form id="loginForm" class="space-y-4">
+            <div>
+                <label class="block text-sm font-medium mb-2">Username</label>
+                <input type="text" id="username" name="username" required
+                    class="w-full px-4 py-3 rounded-lg bg-gray-800 border border-gray-700 focus:border-blue-500 focus:outline-none transition-all">
+            </div>
+            <div>
+                <label class="block text-sm font-medium mb-2">Password</label>
+                <input type="password" id="password" name="password" required
+                    class="w-full px-4 py-3 rounded-lg bg-gray-800 border border-gray-700 focus:border-blue-500 focus:outline-none transition-all">
+            </div>
+            <button type="submit"
+                class="w-full px-4 py-3 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 transition-all font-semibold">
+                Sign In
+            </button>
+        </form>
+        <div id="errorMsg" class="mt-4 text-red-400 text-sm text-center hidden"></div>
+    </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+document.getElementById('loginForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const formData = new FormData();
+    formData.append('username', document.getElementById('username').value);
+    formData.append('password', document.getElementById('password').value);
+    
+    try {
+        const response = await fetch('/admin/api/auth/login', {
+            method: 'POST',
+            body: formData
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            localStorage.setItem('token', data.access_token);
+            window.location.href = '/admin/dashboard';
+        } else {
+            document.getElementById('errorMsg').classList.remove('hidden');
+            document.getElementById('errorMsg').textContent = 'Invalid credentials';
+        }
+    } catch (error) {
+        document.getElementById('errorMsg').classList.remove('hidden');
+        document.getElementById('errorMsg').textContent = 'Error connecting to server';
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block title %}Dashboard - License Admin{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+{% block content %}
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div class="glass-card p-6">
+        <div class="flex items-center gap-4">
+            <div class="w-12 h-12 rounded-full bg-blue-600/20 flex items-center justify-center">
+                <i class="fas fa-key text-blue-500 text-xl"></i>
+            </div>
+            <div>
+                <p class="text-sm text-gray-400">Total Keys</p>
+                <p class="text-2xl font-bold">{{ stats.total_keys }}</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="glass-card p-6">
+        <div class="flex items-center gap-4">
+            <div class="w-12 h-12 rounded-full bg-green-600/20 flex items-center justify-center">
+                <i class="fas fa-check-circle text-green-500 text-xl"></i>
+            </div>
+            <div>
+                <p class="text-sm text-gray-400">Active Keys</p>
+                <p class="text-2xl font-bold">{{ stats.active_keys }}</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="glass-card p-6">
+        <div class="flex items-center gap-4">
+            <div class="w-12 h-12 rounded-full bg-red-600/20 flex items-center justify-center">
+                <i class="fas fa-times-circle text-red-500 text-xl"></i>
+            </div>
+            <div>
+                <p class="text-sm text-gray-400">Expired Keys</p>
+                <p class="text-2xl font-bold">{{ stats.expired_keys }}</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="glass-card p-6">
+        <div class="flex items-center gap-4">
+            <div class="w-12 h-12 rounded-full bg-yellow-600/20 flex items-center justify-center">
+                <i class="fas fa-ban text-yellow-500 text-xl"></i>
+            </div>
+            <div>
+                <p class="text-sm text-gray-400">Banned Keys</p>
+                <p class="text-2xl font-bold">{{ stats.banned_keys }}</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="glass-card p-6">
+        <div class="flex items-center gap-4">
+            <div class="w-12 h-12 rounded-full bg-purple-600/20 flex items-center justify-center">
+                <i class="fas fa-devices text-purple-500 text-xl"></i>
+            </div>
+            <div>
+                <p class="text-sm text-gray-400">Active Devices</p>
+                <p class="text-2xl font-bold">{{ stats.total_devices }}</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="glass-card p-6">
+        <div class="flex items-center gap-4">
+            <div class="w-12 h-12 rounded-full bg-cyan-600/20 flex items-center justify-center">
+                <i class="fas fa-chart-bar text-cyan-500 text-xl"></i>
+            </div>
+            <div>
+                <p class="text-sm text-gray-400">API Requests</p>
+                <p class="text-2xl font-bold">{{ stats.api_requests }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

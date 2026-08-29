@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block title %}Devices - License Admin{% endblock %}
+{% block page_title %}Devices{% endblock %}
+{% block content %}
+<div class="glass-card p-6">
+    <h3 class="text-lg font-semibold mb-4">All Devices</h3>
+    <div class="overflow-x-auto">
+        <table class="w-full">
+            <thead>
+                <tr class="border-b border-gray-800">
+                    <th class="text-left py-3 px-4">Device ID</th>
+                    <th class="text-left py-3 px-4">License Key</th>
+                    <th class="text-left py-3 px-4">IP Address</th>
+                    <th class="text-left py-3 px-4">Last Seen</th>
+                    <th class="text-left py-3 px-4">Status</th>
+                    <th class="text-left py-3 px-4">Actions</th>
+                </tr>
+            </thead>
+            <tbody id="devicesTableBody">
+                <tr><td colspan="6" class="text-center py-4">Loading...</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+function loadDevices() {
+    fetch('/admin/api/devices', {
+        headers: {'Authorization': `Bearer ${localStorage.getItem('token')}`}
+    })
+    .then(res => res.json())
+    .then(devices => {
+        const tbody = document.getElementById('devicesTableBody');
+        tbody.innerHTML = devices.map(device => `
+            <tr class="border-b border-gray-800 hover:bg-gray-800/50">
+                <td class="py-3 px-4 font-mono">${device.device_id}</td>
+                <td class="py-3 px-4 font-mono">${device.license_key}</td>
+                <td class="py-3 px-4">${device.ip_address || 'N/A'}</td>
+                <td class="py-3 px-4">${new Date(device.last_seen).toLocaleString()}</td>
+                <td class="py-3 px-4">
+                    <span class="px-2 py-1 rounded-full text-xs font-semibold ${device.is_banned ? 'bg-red-600/20 text-red-400' : 'bg-green-600/20 text-green-400'}">
+                        ${device.is_banned ? 'Banned' : 'Active'}
+                    </span>
+                </td>
+                <td class="py-3 px-4">
+                    ${device.is_banned 
+                        ? `<button onclick="unbanDevice('${device.device_id}')" class="text-green-400 hover:text-green-300">Unban</button>`
+                        : `<button onclick="banDevice('${device.device_id}')" class="text-yellow-400 hover:text-yellow-300">Ban</button>`
+                    }
+                </td>
+            </tr>
+        `).join('');
+    });
+}
+
+function banDevice(deviceId) {
+    const reason = prompt('Reason for ban:');
+    const formData = new FormData();
+    formData.append('reason', reason || '');
+    formData.append('is_permanent', 'true');
+    
+    fetch(`/admin/api/devices/${deviceId}/ban`, {
+        method: 'PUT',
+        headers: {'Authorization': `Bearer ${localStorage.getItem('token')}`},
+        body: formData
+    })
+    .then(() => loadDevices());
+}
+
+function unbanDevice(deviceId) {
+    fetch(`/admin/api/devices/${deviceId}/unban`, {
+        method: 'PUT',
+        headers: {'Authorization': `Bearer ${localStorage.getItem('token')}`}
+    })
+    .then(() => loadDevices());
+}
+
+loadDevices();
+</script>
+{% endblock %}

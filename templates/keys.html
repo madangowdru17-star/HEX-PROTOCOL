@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+{% block title %}License Keys - License Admin{% endblock %}
+{% block page_title %}License Keys{% endblock %}
+{% block content %}
+<div class="glass-card p-6 mb-6">
+    <h3 class="text-lg font-semibold mb-4">Generate New Keys</h3>
+    <form id="generateKeyForm" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+            <label class="block text-sm font-medium mb-2">Application</label>
+            <select id="appId" name="application_id" class="w-full px-4 py-3 rounded-lg bg-gray-800 border border-gray-700 focus:border-blue-500 focus:outline-none">
+                <option value="">Loading...</option>
+            </select>
+        </div>
+        <div>
+            <label class="block text-sm font-medium mb-2">Max Devices</label>
+            <input type="number" name="max_devices" value="1" min="1" class="w-full px-4 py-3 rounded-lg bg-gray-800 border border-gray-700 focus:border-blue-500 focus:outline-none">
+        </div>
+        <div>
+            <label class="block text-sm font-medium mb-2">Duration</label>
+            <select id="durationType" name="duration_type" class="w-full px-4 py-3 rounded-lg bg-gray-800 border border-gray-700 focus:border-blue-500 focus:outline-none">
+                <option value="hours">Hours</option>
+                <option value="days">Days</option>
+                <option value="permanent">Permanent</option>
+            </select>
+        </div>
+        <div id="durationValueDiv">
+            <label class="block text-sm font-medium mb-2">Value</label>
+            <input type="number" name="duration_value" value="1" min="1" class="w-full px-4 py-3 rounded-lg bg-gray-800 border border-gray-700 focus:border-blue-500 focus:outline-none">
+        </div>
+        <div>
+            <label class="block text-sm font-medium mb-2">Quantity</label>
+            <input type="number" name="quantity" value="1" min="1" max="100" class="w-full px-4 py-3 rounded-lg bg-gray-800 border border-gray-700 focus:border-blue-500 focus:outline-none">
+        </div>
+        <div class="flex items-end">
+            <button type="submit" class="w-full px-4 py-3 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 transition-all font-semibold">
+                Generate Keys
+            </button>
+        </div>
+    </form>
+</div>
+
+<div class="glass-card p-6">
+    <h3 class="text-lg font-semibold mb-4">All Keys</h3>
+    <div class="overflow-x-auto">
+        <table class="w-full">
+            <thead>
+                <tr class="border-b border-gray-800">
+                    <th class="text-left py-3 px-4">Key</th>
+                    <th class="text-left py-3 px-4">Application</th>
+                    <th class="text-left py-3 px-4">Status</th>
+                    <th class="text-left py-3 px-4">Max Devices</th>
+                    <th class="text-left py-3 px-4">Expires At</th>
+                    <th class="text-left py-3 px-4">Actions</th>
+                </tr>
+            </thead>
+            <tbody id="keysTableBody">
+                <tr><td colspan="6" class="text-center py-4">Loading...</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+function loadKeys() {
+    fetch('/admin/api/keys', {
+        headers: {'Authorization': `Bearer ${localStorage.getItem('token')}`}
+    })
+    .then(res => res.json())
+    .then(keys => {
+        const tbody = document.getElementById('keysTableBody');
+        tbody.innerHTML = keys.map(key => `
+            <tr class="border-b border-gray-800 hover:bg-gray-800/50">
+                <td class="py-3 px-4 font-mono">${key.key}</td>
+                <td class="py-3 px-4">${key.app_name}</td>
+                <td class="py-3 px-4">
+                    <span class="px-2 py-1 rounded-full text-xs font-semibold ${
+                        key.status === 'ACTIVE' ? 'bg-green-600/20 text-green-400' :
+                        key.status === 'EXPIRED' ? 'bg-red-600/20 text-red-400' :
+                        key.status === 'BANNED' ? 'bg-yellow-600/20 text-yellow-400' :
+                        'bg-gray-600/20 text-gray-400'
+                    }">${key.status}</span>
+                </td>
+                <td class="py-3 px-4">${key.max_devices}</td>
+                <td class="py-3 px-4">${key.expires_at ? new Date(key.expires_at).toLocaleString() : 'Permanent'}</td>
+                <td class="py-3 px-4">
+                    <button onclick="changeStatus(${key.id}, 'BANNED')" class="text-yellow-400 hover:text-yellow-300 mr-2">Ban</button>
+                    <button onclick="changeStatus(${key.id}, 'ACTIVE')" class="text-green-400 hover:text-green-300">Activate</button>
+                </td>
+            </tr>
+        `).join('');
+    });
+}
+
+function changeStatus(id, status) {
+    const formData = new FormData();
+    formData.append('status', status);
+    fetch(`/admin/api/keys/${id}/status`, {
+        method: 'PUT',
+        headers: {'Authorization': `Bearer ${localStorage.getItem('token')}`},
+        body: formData
+    })
+    .then(() => loadKeys());
+}
+
+function loadApps() {
+    fetch('/admin/api/apps', {
+        headers: {'Authorization': `Bearer ${localStorage.getItem('token')}`}
+    })
+    .then(res => res.json())
+    .then(apps => {
+        const select = document.getElementById('appId');
+        select.innerHTML = apps.map(app => `<option value="${app.id}">${app.name}</option>`).join('');
+    });
+}
+
+document.getElementById('generateKeyForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const formData = new FormData(this);
+    const durationType = formData.get('duration_type');
+    const durationValue = formData.get('duration_value');
+    
+    if (durationType === 'hours') {
+        formData.append('hours', durationValue);
+    } else if (durationType === 'days') {
+        formData.append('days', durationValue);
+    } else {
+        formData.append('is_permanent', 'true');
+    }
+    
+    try {
+        const response = await fetch('/admin/api/keys', {
+            method: 'POST',
+            headers: {'Authorization': `Bearer ${localStorage.getItem('token')}`},
+            body: formData
+        });
+        const data = await response.json();
+        if (data.keys) {
+            alert(`Generated ${data.keys.length} key(s):\n${data.keys.map(k => k.key).join('\n')}`);
+            loadKeys();
+        }
+    } catch (error) {
+        alert('Error generating keys');
+    }
+});
+
+loadApps();
+loadKeys();
+</script>
+{% endblock %}

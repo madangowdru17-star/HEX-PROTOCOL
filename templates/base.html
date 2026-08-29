@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}License Admin Panel{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body class="bg-gray-950 text-gray-100 min-h-screen flex">
+    {% if request.url.path != '/admin/login' %}
+        {% include 'partials/sidebar.html' %}
+    {% endif %}
+    <div class="flex-1 flex flex-col min-h-screen">
+        {% if request.url.path != '/admin/login' %}
+            {% include 'partials/topbar.html' %}
+        {% endif %}
+        <main class="flex-1 p-6">
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+    <script src="/static/js/main.js"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>
